@@ -12,8 +12,8 @@ constexpr int SCREEN_WIDTH  = 1000 * 1.5f,
               SCREEN_HEIGHT = 600 * 1.5f,
               FPS           = 60,
               SIZE          = 100;
-float BALL_SPEED = 300.0f;
-float PADDLE_SPEED = 200.0f;
+float BALL_SPEED = 400.0f;
+float PADDLE_SPEED = 250.0f;
 
 constexpr Vector2 ORIGIN = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 constexpr Vector2 LEFT_START = {100.0f, SCREEN_HEIGHT / 2};
@@ -41,6 +41,7 @@ float gAngle = 0.0f;
 PlayerMode mode = DOUBLE;
 Direction xDir = RIGHT;
 Direction yDir = UP;
+Direction paddle2Dir = UP;
 
 Vector2 gDittoPaddle1Position = LEFT_START,
         gDittoPaddle1Movement = {0.0f, 0.0f},
@@ -98,7 +99,10 @@ void processInput()
     //if press t, switch between player modes
     if (IsKeyPressed(KEY_T)) {
         if (mode == SINGLE) mode = DOUBLE;
-        else if (mode == DOUBLE) mode = SINGLE;
+        else if (mode == DOUBLE) {
+            mode = SINGLE;
+            paddle2Dir = yDir;
+        }
     }
 
    // exit game
@@ -166,6 +170,28 @@ void update() {
                 gDittoPaddle2Position.x + gDittoPaddle2Movement.x,
                 gDittoPaddle2Position.y + gDittoPaddle2Movement.y * PADDLE_SPEED * deltaTime
             };
+        }
+    }else if (mode == SINGLE) {
+        if (gDittoPaddle2Position.y > 50.0f && paddle2Dir == UP){
+            gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
+            if (gBall1Position.x > gDittoPaddle2Position.x - 400.0f) {
+                if (yDir == UP && gDittoPaddle2Position.y < gBall1Position.y) paddle2Dir = DOWN;
+                else if (yDir == DOWN && gDittoPaddle2Position.y > gBall1Position.y) paddle2Dir = UP;
+                else paddle2Dir = yDir;
+            }
+        }else if (gDittoPaddle2Position.y < SCREEN_HEIGHT - 50.0 && paddle2Dir == DOWN) {
+            gDittoPaddle2Position.y += PADDLE_SPEED * deltaTime;
+            if (gBall1Position.x > gDittoPaddle2Position.x - 400.0f) {
+                if (yDir == UP && gDittoPaddle2Position.y < gBall1Position.y) paddle2Dir = DOWN;
+                else if (yDir == DOWN && gDittoPaddle2Position.y > gBall1Position.y) paddle2Dir = UP;
+                else paddle2Dir = yDir;
+            }
+        }else if (gDittoPaddle2Position.y > SCREEN_HEIGHT - 50.0) {
+            gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
+            paddle2Dir = UP;
+        }else if (gDittoPaddle2Position.y < 50.0f) {
+            gDittoPaddle2Position.y += PADDLE_SPEED * deltaTime;
+            paddle2Dir = DOWN;
         }
     }
 
