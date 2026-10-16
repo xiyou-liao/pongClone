@@ -1,3 +1,21 @@
+/**
+
+* Author: Ren Liao
+
+* Assignment: Pong Clone
+
+* Date due: 10/16/2026
+
+* I pledge that I have completed this assignment without
+
+* collaborating with anyone else, in conformance with the
+
+* NYU School of Engineering Policies and Procedures on
+
+* Academic Misconduct.
+
+**/
+
 #include "raylib.h"
 #include <iostream>
 #include <math.h>
@@ -26,8 +44,8 @@ constexpr Vector2 BASE_SIZE   = { static_cast<float>(SIZE), static_cast<float>(S
 
 
 constexpr char DITTOBALL[] = "assets/ditto.png";
-constexpr char DITTOPADDLE1[] = "assets/ditto.png";
-constexpr char DITTOPADDLE2[] = "assets/ditto.png";
+constexpr char DITTOPADDLE[] = "assets/dittoPaddle.png";
+//constexpr char DITTOPADDLE2[] = "assets/dittoPaddle.png";
 
 
 
@@ -42,8 +60,6 @@ float gPreviousTicks = 0.0f;
 float gAngle = 0.0f;
 
 PlayerMode mode = DOUBLE;
-//Direction xDir = RIGHT;
-//Direction yDir = UP;
 Direction paddle2Dir = UP;
 
 int numBalls = 1;
@@ -51,11 +67,11 @@ int numBalls = 1;
 
 Vector2 gDittoPaddle1Position = LEFT_START,
         gDittoPaddle1Movement = {0.0f, 0.0f},
-        gDittoPaddle1Scale = BASE_SIZE,
+        gDittoPaddle1Scale = {27.0f, 100.0f},
 
         gDittoPaddle2Position = RIGHT_START,
         gDittoPaddle2Movement = {0.0f, 0.0f},
-        gDittoPaddle2Scale = BASE_SIZE;
+        gDittoPaddle2Scale = {27.0f, 100.0f};
 
 int player1Score = 0;
 int player2Score = 0;
@@ -205,8 +221,8 @@ void initialize() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ditto Pong Game");
 
     gDittoBallTexture = LoadTexture(DITTOBALL);
-    gDittoPaddle1Texture = LoadTexture(DITTOPADDLE1);
-    gDittoPaddle2Texture = LoadTexture(DITTOPADDLE2);
+    gDittoPaddle1Texture = LoadTexture(DITTOPADDLE);
+    gDittoPaddle2Texture = LoadTexture(DITTOPADDLE);
 
 
 }
@@ -233,15 +249,15 @@ void update() {
     }else if (mode == SINGLE) {
         Ball closestBall = returnClosestBall(balls);
         if (gDittoPaddle2Position.y > 50.0f && paddle2Dir == UP){
-            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 450.0f) gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
-            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 450.0f) {
+            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 500.0f) gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
+            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 500.0f) {
                 if (closestBall.getYDirection() == UP && gDittoPaddle2Position.y < closestBall.getPosition().y) paddle2Dir = DOWN;
                 else if (closestBall.getYDirection() == DOWN && gDittoPaddle2Position.y > closestBall.getPosition().y) paddle2Dir = UP;
                 else paddle2Dir = closestBall.getYDirection();
             }
         }else if (gDittoPaddle2Position.y < SCREEN_HEIGHT - 50.0 && paddle2Dir == DOWN) {
-            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 450.0f) gDittoPaddle2Position.y += PADDLE_SPEED * deltaTime;
-            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 450.0f) {
+            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 500.0f) gDittoPaddle2Position.y += PADDLE_SPEED * deltaTime;
+            if (closestBall.getPosition().x > gDittoPaddle2Position.x - 500.0f) {
                 if (closestBall.getYDirection() == UP
                     && gDittoPaddle2Position.y < closestBall.getPosition().y) paddle2Dir = DOWN;
                 else if (closestBall.getYDirection() == DOWN && gDittoPaddle2Position.y > closestBall.getPosition().y) paddle2Dir = UP;
@@ -389,9 +405,12 @@ void render() {
 
     if (winCondition(player1Score)) DrawText("Player 1 Wins!", ORIGIN.x - 300.0f, ORIGIN.y, 100, BLACK);
     else if (winCondition(player2Score)) DrawText("Player 2 Wins!", ORIGIN.x - 300.0f, ORIGIN.y, 100, BLACK);
-    for (const Ball& ball : balls){
-        ball.draw();
+    else if (!winCondition(player1Score) && !winCondition(player2Score)) {
+        for (const Ball& ball : balls){
+            ball.draw();
+        }
     }
+
 
     EndDrawing();
 
@@ -408,7 +427,7 @@ int main() {
 
     while (gAppStatus == RUNNING) {
         processInput();
-        update();
+        if (!winCondition(player1Score) && !winCondition(player2Score)) update();
         render();
     }
 
