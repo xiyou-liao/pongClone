@@ -70,8 +70,8 @@ Vector2 gDittoPaddle1Position = LEFT_START,
         gDittoPaddle2Movement = {0.0f, 0.0f},
         gDittoPaddle2Scale = {75.0f, 200.0f},
 
-        gPlayer1ScoresPosition = {600.0f, 100.0f },
-        gPlayer2ScoresPosition = {1050.0f, 100.0f},
+        gPlayer1ScoresPosition = {525.0f, 100.0f },
+        gPlayer2ScoresPosition = {975.0f, 100.0f},
 
         gBackgroundPosition = {0.0f, 0.0f},
         gPlayerWinScale = {500.0f, 300.0f};
