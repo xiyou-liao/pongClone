@@ -27,6 +27,7 @@ class Ball;
 enum AppStatus { TERMINATED, RUNNING };
 enum PlayerMode { SINGLE, DOUBLE };
 enum Direction { RIGHT, LEFT, UP, DOWN };
+enum NUMBER { ZERO, ONE, TWO, THREE, FOUR, FIVE };
 // Global Constants
 constexpr int SCREEN_WIDTH  = 1000 * 1.5f,
               SCREEN_HEIGHT = 600 * 1.5f,
@@ -41,16 +42,17 @@ constexpr Vector2 ORIGINOFFSET2 = {SCREEN_WIDTH / 2 -5.0f, SCREEN_HEIGHT / 2 + 7
 constexpr Vector2 LEFT_START = {100.0f, SCREEN_HEIGHT / 2};
 constexpr Vector2 RIGHT_START = {SCREEN_WIDTH - 100.0f, SCREEN_HEIGHT / 2};
 constexpr Vector2 BASE_SIZE   = { static_cast<float>(SIZE), static_cast<float>(SIZE) };
+constexpr Vector2 BACKGROUND_SIZE = {static_cast<float>(SCREEN_WIDTH), static_cast<float>(SCREEN_HEIGHT)};
+
+constexpr char DITTOBALL[] = "assets/dittoBall.png";
+constexpr char DITTOPADDLE1[] = "assets/dittoPaddle1.png";
+constexpr char DITTOPADDLE2[] = "assets/dittoPaddle2.png";
+constexpr char PLAYER1WIN[] = "assets/player1Win.png";
+constexpr char PLAYER2WIN[] = "assets/player2Win.png";
+constexpr char SCORES[] = "assets/scores.png";
+constexpr char BACKGROUND[] = "assets/dittoBackground.png";
 
 
-constexpr char DITTOBALL[] = "assets/ditto.png";
-constexpr char DITTOPADDLE[] = "assets/dittoPaddle.png";
-//constexpr char DITTOPADDLE2[] = "assets/dittoPaddle.png";
-
-
-
-
-//constexpr char DITTO[] = "assets/ditto.png";
 // Global Variables
 AppStatus gAppStatus = RUNNING;
 Vector2 gScale = BASE_SIZE;
@@ -61,17 +63,25 @@ float gAngle = 0.0f;
 
 PlayerMode mode = DOUBLE;
 Direction paddle2Dir = UP;
+NUMBER player1 = ZERO;
+NUMBER player2 = ZERO;
 
 int numBalls = 1;
 
 
 Vector2 gDittoPaddle1Position = LEFT_START,
         gDittoPaddle1Movement = {0.0f, 0.0f},
-        gDittoPaddle1Scale = {27.0f, 100.0f},
+        gDittoPaddle1Scale = {75.0f, 200.0f},
 
         gDittoPaddle2Position = RIGHT_START,
         gDittoPaddle2Movement = {0.0f, 0.0f},
-        gDittoPaddle2Scale = {27.0f, 100.0f};
+        gDittoPaddle2Scale = {75.0f, 200.0f},
+
+        gPlayer1ScoresPosition = {600.0f, 100.0f },
+        gPlayer2ScoresPosition = {1000.0f, 100.0f},
+
+        gBackgroundPosition = {0.0f, 0.0f},
+        gPlayerWinScale = {500.0f, 300.0f};
 
 int player1Score = 0;
 int player2Score = 0;
@@ -79,6 +89,10 @@ int player2Score = 0;
 Texture2D gDittoPaddle1Texture;
 Texture2D gDittoPaddle2Texture;
 Texture2D gDittoBallTexture;
+Texture2D gScoresTexture;
+Texture2D gPlayer1WinTexture;
+Texture2D gPlayer2WinTexture;
+Texture2D gBackgroundTexture;
 
 // Function Declarations
 void initialize();
@@ -177,6 +191,14 @@ void processInput()
     if (IsKeyPressed(KEY_TWO)) numBalls = 2;
     if (IsKeyPressed(KEY_THREE)) numBalls = 3;
 
+    if (IsKeyPressed(KEY_R)) {
+        player1Score = 0;
+        player2Score = 0;
+        numBalls = 1;
+        gDittoPaddle1Position = LEFT_START;
+        gDittoPaddle2Position = RIGHT_START;
+        mode = DOUBLE;
+    }
    // exit game
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
@@ -221,9 +243,12 @@ void initialize() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ditto Pong Game");
 
     gDittoBallTexture = LoadTexture(DITTOBALL);
-    gDittoPaddle1Texture = LoadTexture(DITTOPADDLE);
-    gDittoPaddle2Texture = LoadTexture(DITTOPADDLE);
-
+    gDittoPaddle1Texture = LoadTexture(DITTOPADDLE1);
+    gDittoPaddle2Texture = LoadTexture(DITTOPADDLE2);
+    gScoresTexture = LoadTexture(SCORES);
+    gPlayer1WinTexture = LoadTexture(PLAYER1WIN);
+    gPlayer2WinTexture = LoadTexture(PLAYER2WIN);
+    gBackgroundTexture = LoadTexture(BACKGROUND);
 
 }
 
@@ -233,18 +258,25 @@ void update() {
     float deltaTime = ticks - gPreviousTicks;
     gPreviousTicks = ticks;
 
-   gDittoPaddle1Position = {
-        gDittoPaddle1Position.x + gDittoPaddle1Movement.x,
-        gDittoPaddle1Position.y + gDittoPaddle1Movement.y * PADDLE_SPEED * deltaTime
-    };
+    if (gDittoPaddle1Position.y > 100.0f && gDittoPaddle1Position.y < SCREEN_HEIGHT - 100.0f) {
+        gDittoPaddle1Position = {
+            gDittoPaddle1Position.x + gDittoPaddle1Movement.x,
+            gDittoPaddle1Position.y + gDittoPaddle1Movement.y * PADDLE_SPEED * deltaTime
+        };
+    }
+    else if (gDittoPaddle1Position.y < 100.0f) gDittoPaddle1Position.y += 0.2f;
+    else if (gDittoPaddle1Position.y > SCREEN_HEIGHT - 100.0f) gDittoPaddle1Position.y -= 0.2f;
+
 
     if (mode == DOUBLE) {
-        if (gDittoPaddle2Position.y > 0.0f && gDittoPaddle2Position.y < SCREEN_HEIGHT) {
+        if (gDittoPaddle2Position.y > 100.0f  && gDittoPaddle2Position.y < SCREEN_HEIGHT - 100.0f) {
             gDittoPaddle2Position = {
                 gDittoPaddle2Position.x + gDittoPaddle2Movement.x,
                 gDittoPaddle2Position.y + gDittoPaddle2Movement.y * PADDLE_SPEED * deltaTime
             };
         }
+        else if (gDittoPaddle2Position.y < 100.0f) gDittoPaddle2Position.y += 0.2f;
+        else if (gDittoPaddle2Position.y > SCREEN_HEIGHT - 100.0f) gDittoPaddle2Position.y -= 0.2f;
 
     }else if (mode == SINGLE) {
         Ball closestBall = returnClosestBall(balls);
@@ -272,39 +304,6 @@ void update() {
         }
     }
 
-    // Ball closestBall = returnClosestBall(balls);
-    // if (gDittoPaddle2Position.y > 50.0f && paddle2Dir == UP){
-    //     gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
-    //     if (gBall1Position.x > gDittoPaddle2Position.x - 400.0f) {
-    //         if (yDir == UP && gDittoPaddle2Position.y < gBall1Position.y) paddle2Dir = DOWN;
-    //         else if (yDir == DOWN && gDittoPaddle2Position.y > gBall1Position.y) paddle2Dir = UP;
-    //         else paddle2Dir = yDir;
-    //     }
-    // }else if (gDittoPaddle2Position.y < SCREEN_HEIGHT - 50.0 && paddle2Dir == DOWN) {
-    //     gDittoPaddle2Position.y += PADDLE_SPEED * deltaTime;
-    //     if (gBall1Position.x > gDittoPaddle2Position.x - 400.0f) {
-    //         if (yDir == UP && gDittoPaddle2Position.y < gBall1Position.y) paddle2Dir = DOWN;
-    //         else if (yDir == DOWN && gDittoPaddle2Position.y > gBall1Position.y) paddle2Dir = UP;
-    //         else paddle2Dir = yDir;
-    //     }
-    // }else if (gDittoPaddle2Position.y > SCREEN_HEIGHT - 50.0) {
-    //     gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
-    //     paddle2Dir = UP;
-    // }else if (gDittoPaddle2Position.y < 50.0f) {
-    //     gDittoPaddle2Position.y += PADDLE_SPEED * deltaTime;
-    //     paddle2Dir = DOWN;
-    // }
-    // if (isColliding(&gDittoPaddle1Position, &gDittoPaddle1Scale, &gBall1Position, &gBall1Scale)) {
-    //     xDir = RIGHT;
-    //     if (gDittoPaddle1Movement.y > 0.0f) yDir = DOWN;
-    //     else yDir = UP;
-    // }
-    //
-    // if (isColliding(&gDittoPaddle2Position, &gDittoPaddle2Scale, &gBall1Position, &gBall1Scale)) {
-    //     xDir = LEFT;
-    //     if (gDittoPaddle2Movement.y > 0.0f) yDir = DOWN;
-    //     else yDir = UP;
-    // }
 
     while (balls.size() < numBalls) {
         if (balls.empty()) balls.emplace_back(ORIGIN, BASE_SIZE, RIGHT, UP, &gDittoBallTexture);
@@ -356,60 +355,93 @@ void update() {
             curBall.updateY(UP);
         }
     }
-    // if(gBall1Position.x < SCREEN_WIDTH - 100.0f && xDir == RIGHT){
-    //     gBall1Position.x += BALL_SPEED * deltaTime;
-    // }else if (gBall1Position.x > 100.0f && xDir == LEFT) {
-    //     gBall1Position.x -= BALL_SPEED * deltaTime;
-    // }else if (gBall1Position.x > SCREEN_WIDTH - 100.0f) {
-    //     gBall1Position = ORIGIN;
-    //     player1Score ++;
-    // }else if (gBall1Position.x < 100.0f) {
-    //     gBall1Position = ORIGIN;
-    //     player2Score ++;
-    // }
 
-    // if (gBall1Position.y > 100.0f && yDir == UP) {
-    //     gBall1Position.y -= BALL_SPEED * deltaTime;
-    // }else if (gBall1Position.y < SCREEN_HEIGHT - 100.0f && yDir == DOWN) {
-    //     gBall1Position.y += BALL_SPEED * deltaTime;
-    // }else if (gBall1Position.y < 100.0f) {
-    //     gBall1Position.y -= BALL_SPEED * deltaTime;
-    //     yDir = DOWN;
-    // }else if (gBall1Position.y >  SCREEN_HEIGHT - 100.0f) {
-    //     gBall1Position.y += BALL_SPEED * deltaTime;
-    //     yDir = UP;
-    // }
+    if (player1Score == 0) player1 = ZERO;
+    else if (player1Score == 1) player1 = ONE;
+    else if (player1Score == 2) player1 = TWO;
+    else if (player1Score == 3) player1 = THREE;
+    else if (player1Score == 4) player1 = FOUR;
+    else if (player1Score == 5) player1 = FIVE;
 
-
-    // }else if (mode == SINGLE) {
-    //     float ball1DistanceFromPaddle2 = gBall1Position.x - gDittoPaddle2Position.x;
-    //     float ball2DistanceFromPaddle2 = gBall2Position.x - gDittoPaddle2Position.x;
-    //     float ball3DistanceFromPaddle2 = gBall3Position.x - gDittoPaddle2Position.x;
-    //     if (ball1DistanceFromPaddle2 < 100.0f || ball2DistanceFromPaddle2 < 100.0f || ball3DistanceFromPaddle2 < 100.0f) {
-    //         if (gBall1Position.y > gDittoPaddle2Position.y) gDittoPaddle2Movement.y = -0.1f;
-    //         else gDittoPaddle2Movement.y = 0.1f;
-    //     }
-    //
-    // }
+    if (player2Score == 0) player2 = ZERO;
+    else if (player2Score == 1) player2 = ONE;
+    else if (player2Score == 2) player2 = TWO;
+    else if (player2Score == 3) player2 = THREE;
+    else if (player2Score == 4) player2 = FOUR;
+    else if (player2Score == 5) player2 = FIVE;
 
 }
 void render() {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    DrawText(TextFormat("%d", player1Score), 500, 100, 50, BLACK);
-    DrawText(TextFormat("%d", player2Score), 900, 100, 50, BLACK);
-
+    renderObject(&gBackgroundTexture, &ORIGIN, &BACKGROUND_SIZE);
     renderObject(&gDittoPaddle1Texture, &gDittoPaddle1Position, &gDittoPaddle1Scale);
     renderObject(&gDittoPaddle2Texture, &gDittoPaddle2Position, &gDittoPaddle2Scale);
+    if (winCondition(player1Score)) {
+        renderObject(&gPlayer1WinTexture, &ORIGIN, &gPlayerWinScale);
+    }
+    if (winCondition(player2Score)) {
+        renderObject(&gPlayer2WinTexture, &ORIGIN, &gPlayerWinScale);
+    }
 
-    if (winCondition(player1Score)) DrawText("Player 1 Wins!", ORIGIN.x - 300.0f, ORIGIN.y, 100, BLACK);
-    else if (winCondition(player2Score)) DrawText("Player 2 Wins!", ORIGIN.x - 300.0f, ORIGIN.y, 100, BLACK);
-    else if (!winCondition(player1Score) && !winCondition(player2Score)) {
+    float player1ScoreX = 0.0f, player1ScoreY = 0.0f,
+          player2ScoreX = 0.0f, player2ScoreY = 0.0f,
+           scoreWidth = static_cast<float>(gScoresTexture.width) / 6.0f;
+    if (player1 == ZERO) player1ScoreX = 0.0f;
+    else if(player1 == ONE) player1ScoreX = scoreWidth;
+    else if(player1 == TWO) player1ScoreX = scoreWidth * 2.0f;
+    else if(player1 == THREE) player1ScoreX = scoreWidth * 3.0f;
+    else if(player1 == FOUR) player1ScoreX = scoreWidth * 4.0f;
+    else if(player1 == FIVE) player1ScoreX = scoreWidth * 5.0f;
+
+    if (player2 == ZERO) player2ScoreX = 0.0f;
+    else if(player2 == ONE) player2ScoreX = scoreWidth;
+    else if(player2 == TWO) player2ScoreX = scoreWidth * 2.0f;
+    else if(player2 == THREE) player2ScoreX = scoreWidth * 3.0f;
+    else if(player2 == FOUR) player2ScoreX = scoreWidth * 4.0f;
+    else if(player2 == FIVE) player2ScoreX = scoreWidth * 5.0f;
+
+    Vector2 objectOrigin = {gScale.x / 2.0f, gScale.y / 2.0f};
+
+    Rectangle textureAreaPlayer1Score = {
+        player1ScoreX, player1ScoreY,
+
+        scoreWidth,
+        static_cast<float>(gScoresTexture.height)
+    };
+
+    Rectangle destinationAreaPlayer1Score = {
+        gPlayer1ScoresPosition.x, gPlayer1ScoresPosition.y,
+        gScale.x, gScale.y
+    };
+
+    DrawTexturePro(gScoresTexture, textureAreaPlayer1Score,
+        destinationAreaPlayer1Score, objectOrigin, gAngle, WHITE);
+
+
+    Rectangle textureAreaPlayer2Score = {
+        player2ScoreX, player2ScoreY,
+
+        scoreWidth,
+        static_cast<float>(gScoresTexture.height)
+    };
+
+    Rectangle destinationAreaPlayer2Score = {
+        gPlayer2ScoresPosition.x, gPlayer2ScoresPosition.y,
+
+        gScale.x, gScale.y
+    };
+
+    DrawTexturePro(gScoresTexture, textureAreaPlayer2Score,
+        destinationAreaPlayer2Score, objectOrigin, gAngle, WHITE);
+
+    if (!winCondition(player1Score) && !winCondition(player2Score)) {
         for (const Ball& ball : balls){
             ball.draw();
         }
     }
+
 
 
     EndDrawing();
@@ -420,6 +452,7 @@ void shutdown() {
     UnloadTexture(gDittoBallTexture);
     UnloadTexture(gDittoPaddle1Texture);
     UnloadTexture(gDittoPaddle2Texture);
+    UnloadTexture(gScoresTexture);
     CloseWindow();
 }
 int main() {
