@@ -14,7 +14,7 @@ This is my own version of the classic Pong game!
 - To choose number of balls in play: press a number key from 1-3
 - To reset the game at any point: press R
 
-### First person to 5 points wins! Have fun!
+### First person to 5 points wins!
 
 
 

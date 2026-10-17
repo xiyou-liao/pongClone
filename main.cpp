@@ -22,7 +22,6 @@ class Ball;
 enum AppStatus { TERMINATED, RUNNING };
 enum PlayerMode { SINGLE, DOUBLE };
 enum Direction { RIGHT, LEFT, UP, DOWN };
-enum NUMBER { ZERO, ONE, TWO, THREE, FOUR, FIVE };
 
 // Global Constants
 constexpr int SCREEN_WIDTH  = 1000 * 1.5f,
@@ -54,16 +53,14 @@ AppStatus gAppStatus = RUNNING;
 Vector2 gScale = BASE_SIZE;
 Vector2 gPositionDitto = ORIGIN;
 float gPreviousTicks = 0.0f;
-
 float gAngle = 0.0f;
 
 PlayerMode mode = DOUBLE;
 Direction paddle2Dir = UP;
-NUMBER player1 = ZERO;
-NUMBER player2 = ZERO;
 
 int numBalls = 1;
-
+int player1Score = 0;
+int player2Score = 0;
 
 Vector2 gDittoPaddle1Position = LEFT_START,
         gDittoPaddle1Movement = {0.0f, 0.0f},
@@ -74,13 +71,10 @@ Vector2 gDittoPaddle1Position = LEFT_START,
         gDittoPaddle2Scale = {75.0f, 200.0f},
 
         gPlayer1ScoresPosition = {600.0f, 100.0f },
-        gPlayer2ScoresPosition = {1000.0f, 100.0f},
+        gPlayer2ScoresPosition = {1050.0f, 100.0f},
 
         gBackgroundPosition = {0.0f, 0.0f},
         gPlayerWinScale = {500.0f, 300.0f};
-
-int player1Score = 0;
-int player2Score = 0;
 
 Texture2D gDittoPaddle1Texture;
 Texture2D gDittoPaddle2Texture;
@@ -90,6 +84,7 @@ Texture2D gPlayer1WinTexture;
 Texture2D gPlayer2WinTexture;
 Texture2D gBackgroundTexture;
 Music gBGM;
+
 // Function Declarations
 void initialize();
 void processInput();
@@ -98,22 +93,21 @@ void render();
 void renderObject(const Texture2D* texture, const Vector2* position, const Vector2* scale);
 void shutdown();
 bool isColliding(const Vector2 *positionA, const Vector2 *scaleA, const Vector2 *positionB, const Vector2 *scaleB);
-Ball returnClosestBall(vector<Ball>& balls);
+Ball returnClosestBall(const vector<Ball>& ballsInPlay);
 
 class Ball {
 public:
     explicit Ball(const Vector2 position = ORIGIN, const Vector2& scale = BASE_SIZE,
         const Direction& xDir = RIGHT, const Direction& yDir = UP, Texture2D* texture = &gDittoBallTexture) :
                             position(position), scale(scale), xDir(xDir), yDir(yDir), texture(texture) {}
-    Vector2& getPosition() { return position; }
-    // Vector2& getMovement() { return movement; }
-    Vector2& getScale() { return scale; }
+
+    const Vector2& getPosition() const { return position; }
+    const Vector2& getScale() const { return scale; }
     const Direction& getXDirection() const {return xDir;}
     const Direction& getYDirection() const {return yDir;}
 
-    void updateX(Direction dir) {xDir = dir;}
-    void updateY(Direction dir) {yDir = dir;}
-
+    void updateX(const Direction& dir) {xDir = dir;}
+    void updateY(const Direction& dir) {yDir = dir;}
     void updatePosition(float x, float y) {
         position.x += x;
         position.y += y;
@@ -126,6 +120,7 @@ public:
     void draw() const {
         renderObject(texture, &position, &scale);
     }
+
 private:
     Vector2 position;
     Vector2 scale;
@@ -134,9 +129,12 @@ private:
     Texture2D* texture;
 };
 
-Ball returnClosestBall(vector<Ball>& balls) {
+vector<Ball> balls; //vector holding all the balls currently in play
+
+// Function Definitions
+Ball returnClosestBall(const vector<Ball>& ballsInPlay) {
     Ball closestBall;
-    for (Ball& curBall : balls) {
+    for (const Ball& curBall : ballsInPlay) {
         if (curBall.getPosition().x > closestBall.getPosition().x) {
             if (curBall.getXDirection() == RIGHT){
                 closestBall = curBall;
@@ -146,26 +144,25 @@ Ball returnClosestBall(vector<Ball>& balls) {
     return closestBall;
 }
 
-vector<Ball> balls;
-
-// Function Definitions
 bool winCondition(int score) {
     return score == 5;
 }
 void recalculateBalls() {
     if (numBalls > 1) numBalls--;
-  //  if (numBalls == 1 && (winCondition(player1Score) || winCondition(player2Score))) numBalls = 0;
 }
+
+//checks to see if two objects are colliding using box-to-box collision detection
 bool isColliding(const Vector2 *positionA, const Vector2 *scaleA, const Vector2 *positionB, const Vector2 *scaleB) {
     float xDistance = fabs(positionA->x - positionB->x) - ((scaleA->x + scaleB->x) / 2.0f);
     float yDistance = fabs(positionA->y - positionB->y) - ((scaleA->y + scaleB->y) / 2.0f);
 
     return xDistance < 0.0f && yDistance < 0.0f;
 }
-void processInput()
-{
+
+void processInput() {
     gDittoPaddle1Movement = {0.0f, 0.0f};
     gDittoPaddle2Movement = {0.0f, 0.0f};
+    //takes user input to update the movement of the paddles
     if (IsKeyDown(KEY_W) && gDittoPaddle1Position.y > 50.0f) gDittoPaddle1Movement.y = -1.0 ;
     else if (IsKeyDown(KEY_S) && gDittoPaddle1Position.y < SCREEN_HEIGHT-50.0f) gDittoPaddle1Movement.y = 1.0;
 
@@ -176,16 +173,15 @@ void processInput()
     //if press t, switch between player modes
     if (IsKeyPressed(KEY_T)) {
         if (mode == SINGLE) mode = DOUBLE;
-        else if (mode == DOUBLE) {
-            mode = SINGLE;
-          //  paddle2Dir = yDir;
-        }
+        else if (mode == DOUBLE) mode = SINGLE;
     }
 
+    //toggle the number of balls in play
     if (IsKeyPressed(KEY_ONE)) numBalls = 1;
     if (IsKeyPressed(KEY_TWO)) numBalls = 2;
     if (IsKeyPressed(KEY_THREE)) numBalls = 3;
 
+    //reset the game
     if (IsKeyPressed(KEY_R)) {
         player1Score = 0;
         player2Score = 0;
@@ -194,43 +190,27 @@ void processInput()
         gDittoPaddle2Position = RIGHT_START;
         mode = DOUBLE;
     }
-   // exit game
+
+    // exit game
     if (IsKeyPressed(KEY_Q) || WindowShouldClose()) gAppStatus = TERMINATED;
 }
 
-void renderObject(const Texture2D* texture, const Vector2* position,
-                  const Vector2* scale)
-{
-    // Whole texture (UV coordinates)
+void renderObject(const Texture2D* texture, const Vector2* position, const Vector2* scale) {
     Rectangle textureArea = {
-        // top-left corner
         0.0f, 0.0f,
-
-        // bottom-right corner (of texture)
-        static_cast<float>(texture->width),
-        static_cast<float>(texture->height)
+        static_cast<float>(texture->width), static_cast<float>(texture->height)
     };
 
-    // Destination rectangle – centred on gPosition
     Rectangle destinationArea = {
-        position->x,
-        position->y,
-        static_cast<float>(scale->x),
-        static_cast<float>(scale->y)
+        position->x, position->y,
+        static_cast<float>(scale->x), static_cast<float>(scale->y)
     };
 
-    // Origin inside the source texture (centre of the texture)
     Vector2 originOffset = {
-        static_cast<float>(scale->x) / 2.0f,
-        static_cast<float>(scale->y) / 2.0f
+        static_cast<float>(scale->x) / 2.0f, static_cast<float>(scale->y) / 2.0f
     };
 
-    // Render the texture on screen
-    DrawTexturePro(
-        *texture,
-        textureArea, destinationArea, originOffset,
-        gAngle, WHITE
-    );
+    DrawTexturePro(*texture, textureArea, destinationArea, originOffset, gAngle, WHITE);
 }
 
 
@@ -252,7 +232,6 @@ void initialize() {
 }
 
 void update() {
-
     float ticks = static_cast<float>(GetTime());
     float deltaTime = ticks - gPreviousTicks;
     gPreviousTicks = ticks;
@@ -266,8 +245,7 @@ void update() {
     else if (gDittoPaddle1Position.y < 100.0f) gDittoPaddle1Position.y += 0.2f;
     else if (gDittoPaddle1Position.y > SCREEN_HEIGHT - 100.0f) gDittoPaddle1Position.y -= 0.2f;
 
-
-    if (mode == DOUBLE) {
+    if (mode == DOUBLE) { //allows player to control right side paddle in multiplayer mode
         if (gDittoPaddle2Position.y > 100.0f  && gDittoPaddle2Position.y < SCREEN_HEIGHT - 100.0f) {
             gDittoPaddle2Position = {
                 gDittoPaddle2Position.x + gDittoPaddle2Movement.x,
@@ -279,6 +257,10 @@ void update() {
 
     }else if (mode == SINGLE) {
         Ball closestBall = returnClosestBall(balls);
+
+        //once the closest ball is within 500 units from the computer-controlled paddle, paddle starts moving
+        //if the closest ball is above the paddle, paddle go up
+        //if the closest ball is below the paddle, paddle go down;
         if (gDittoPaddle2Position.y > 50.0f && paddle2Dir == UP){
             if (closestBall.getPosition().x > gDittoPaddle2Position.x - 500.0f) gDittoPaddle2Position.y -= PADDLE_SPEED * deltaTime;
             if (closestBall.getPosition().x > gDittoPaddle2Position.x - 500.0f) {
@@ -303,16 +285,25 @@ void update() {
         }
     }
 
-
+    //adds the correct number of balls into the vector containing balls in play
+    //adds each ball in a slightly offset position and direction to prevent all the balls from stacking in one group
     while (balls.size() < numBalls) {
         if (balls.empty()) balls.emplace_back(ORIGIN, BASE_SIZE, RIGHT, UP, &gDittoBallTexture);
         else if (balls.size() == 1) balls.emplace_back(ORIGINOFFSET1, BASE_SIZE, RIGHT, UP, &gDittoBallTexture);
         else if (balls.size() == 2) balls.emplace_back(ORIGINOFFSET2, BASE_SIZE, RIGHT, DOWN, &gDittoBallTexture);
     }
 
+    //gets rid of balls that should not be in play
     while (balls.size() > numBalls) {
         balls.pop_back();
     }
+
+    //handles collisions for each ball
+    //if a ball collides with a paddle:
+        //the ball will head in the opposite x direction that it came from
+        //the ball will go in the same y direction as the paddle that hit it was going
+    //if the ball goes out of bounds on either side, the corresponding side's player will
+    //score a point and the ball will disappear from the game play
     for (Ball& curBall : balls) {
         if (isColliding(&gDittoPaddle1Position, &gDittoPaddle1Scale,
                     &curBall.getPosition(), &curBall.getScale())) {
@@ -355,20 +346,6 @@ void update() {
         }
     }
 
-    if (player1Score == 0) player1 = ZERO;
-    else if (player1Score == 1) player1 = ONE;
-    else if (player1Score == 2) player1 = TWO;
-    else if (player1Score == 3) player1 = THREE;
-    else if (player1Score == 4) player1 = FOUR;
-    else if (player1Score == 5) player1 = FIVE;
-
-    if (player2Score == 0) player2 = ZERO;
-    else if (player2Score == 1) player2 = ONE;
-    else if (player2Score == 2) player2 = TWO;
-    else if (player2Score == 3) player2 = THREE;
-    else if (player2Score == 4) player2 = FOUR;
-    else if (player2Score == 5) player2 = FIVE;
-
     UpdateMusicStream(gBGM);
 }
 void render() {
@@ -378,6 +355,7 @@ void render() {
     renderObject(&gBackgroundTexture, &ORIGIN, &BACKGROUND_SIZE);
     renderObject(&gDittoPaddle1Texture, &gDittoPaddle1Position, &gDittoPaddle1Scale);
     renderObject(&gDittoPaddle2Texture, &gDittoPaddle2Position, &gDittoPaddle2Scale);
+
     if (winCondition(player1Score)) {
         renderObject(&gPlayer1WinTexture, &ORIGIN, &gPlayerWinScale);
     }
@@ -387,28 +365,27 @@ void render() {
 
     float player1ScoreX = 0.0f, player1ScoreY = 0.0f,
           player2ScoreX = 0.0f, player2ScoreY = 0.0f,
-           scoreWidth = static_cast<float>(gScoresTexture.width) / 6.0f;
-    if (player1 == ZERO) player1ScoreX = 0.0f;
-    else if(player1 == ONE) player1ScoreX = scoreWidth;
-    else if(player1 == TWO) player1ScoreX = scoreWidth * 2.0f;
-    else if(player1 == THREE) player1ScoreX = scoreWidth * 3.0f;
-    else if(player1 == FOUR) player1ScoreX = scoreWidth * 4.0f;
-    else if(player1 == FIVE) player1ScoreX = scoreWidth * 5.0f;
+          scoreWidth = static_cast<float>(gScoresTexture.width) / 6.0f;
+    if (player1Score == 0) player1ScoreX = 0.0f;
+    else if(player1Score == 1) player1ScoreX = scoreWidth;
+    else if(player1Score == 2) player1ScoreX = scoreWidth * 2.0f;
+    else if(player1Score == 3) player1ScoreX = scoreWidth * 3.0f;
+    else if(player1Score == 4) player1ScoreX = scoreWidth * 4.0f;
+    else if(player1Score == 5) player1ScoreX = scoreWidth * 5.0f;
 
-    if (player2 == ZERO) player2ScoreX = 0.0f;
-    else if(player2 == ONE) player2ScoreX = scoreWidth;
-    else if(player2 == TWO) player2ScoreX = scoreWidth * 2.0f;
-    else if(player2 == THREE) player2ScoreX = scoreWidth * 3.0f;
-    else if(player2 == FOUR) player2ScoreX = scoreWidth * 4.0f;
-    else if(player2 == FIVE) player2ScoreX = scoreWidth * 5.0f;
+    if (player2Score == 0) player2ScoreX = 0.0f;
+    else if(player2Score == 1) player2ScoreX = scoreWidth;
+    else if(player2Score == 2) player2ScoreX = scoreWidth * 2.0f;
+    else if(player2Score == 3) player2ScoreX = scoreWidth * 3.0f;
+    else if(player2Score == 4) player2ScoreX = scoreWidth * 4.0f;
+    else if(player2Score == 5) player2ScoreX = scoreWidth * 5.0f;
 
     Vector2 objectOrigin = {gScale.x / 2.0f, gScale.y / 2.0f};
 
     Rectangle textureAreaPlayer1Score = {
         player1ScoreX, player1ScoreY,
 
-        scoreWidth,
-        static_cast<float>(gScoresTexture.height)
+        scoreWidth, static_cast<float>(gScoresTexture.height)
     };
 
     Rectangle destinationAreaPlayer1Score = {
@@ -423,8 +400,7 @@ void render() {
     Rectangle textureAreaPlayer2Score = {
         player2ScoreX, player2ScoreY,
 
-        scoreWidth,
-        static_cast<float>(gScoresTexture.height)
+        scoreWidth, static_cast<float>(gScoresTexture.height)
     };
 
     Rectangle destinationAreaPlayer2Score = {
@@ -436,17 +412,16 @@ void render() {
     DrawTexturePro(gScoresTexture, textureAreaPlayer2Score,
         destinationAreaPlayer2Score, objectOrigin, gAngle, WHITE);
 
+    //draw each ball in play
     if (!winCondition(player1Score) && !winCondition(player2Score)) {
         for (const Ball& ball : balls){
             ball.draw();
         }
     }
 
-
-
     EndDrawing();
-
 }
+
 void shutdown() {
     balls.clear();
     UnloadTexture(gDittoBallTexture);
@@ -460,6 +435,7 @@ void shutdown() {
     CloseAudioDevice();
     CloseWindow();
 }
+
 int main() {
     initialize();
 
