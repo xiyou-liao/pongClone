@@ -1,17 +1,11 @@
 /**
 
 * Author: Ren Liao
-
 * Assignment: Pong Clone
-
 * Date due: 10/16/2026
-
 * I pledge that I have completed this assignment without
-
 * collaborating with anyone else, in conformance with the
-
 * NYU School of Engineering Policies and Procedures on
-
 * Academic Misconduct.
 
 **/
@@ -20,14 +14,16 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
-
 using namespace std;
+
 class Ball;
+
 // Enums
 enum AppStatus { TERMINATED, RUNNING };
 enum PlayerMode { SINGLE, DOUBLE };
 enum Direction { RIGHT, LEFT, UP, DOWN };
 enum NUMBER { ZERO, ONE, TWO, THREE, FOUR, FIVE };
+
 // Global Constants
 constexpr int SCREEN_WIDTH  = 1000 * 1.5f,
               SCREEN_HEIGHT = 600 * 1.5f,
@@ -38,7 +34,7 @@ float PADDLE_SPEED = 250.0f;
 
 constexpr Vector2 ORIGIN = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 constexpr Vector2 ORIGINOFFSET1 = {SCREEN_WIDTH / 2 + 10.0f, SCREEN_HEIGHT / 2 - 12.0f};
-constexpr Vector2 ORIGINOFFSET2 = {SCREEN_WIDTH / 2 -5.0f, SCREEN_HEIGHT / 2 + 7.0f};
+constexpr Vector2 ORIGINOFFSET2 = {SCREEN_WIDTH / 2 - 5.0f, SCREEN_HEIGHT / 2 + 7.0f};
 constexpr Vector2 LEFT_START = {100.0f, SCREEN_HEIGHT / 2};
 constexpr Vector2 RIGHT_START = {SCREEN_WIDTH - 100.0f, SCREEN_HEIGHT / 2};
 constexpr Vector2 BASE_SIZE   = { static_cast<float>(SIZE), static_cast<float>(SIZE) };
@@ -51,7 +47,7 @@ constexpr char PLAYER1WIN[] = "assets/player1Win.png";
 constexpr char PLAYER2WIN[] = "assets/player2Win.png";
 constexpr char SCORES[] = "assets/scores.png";
 constexpr char BACKGROUND[] = "assets/dittoBackground.png";
-
+constexpr char BGM[] = "assets/Maple_Leaf_Rag.mp3";
 
 // Global Variables
 AppStatus gAppStatus = RUNNING;
@@ -93,7 +89,7 @@ Texture2D gScoresTexture;
 Texture2D gPlayer1WinTexture;
 Texture2D gPlayer2WinTexture;
 Texture2D gBackgroundTexture;
-
+Music gBGM;
 // Function Declarations
 void initialize();
 void processInput();
@@ -141,7 +137,6 @@ private:
 Ball returnClosestBall(vector<Ball>& balls) {
     Ball closestBall;
     for (Ball& curBall : balls) {
-        // if (closestBall.getXDirection() == RIGHT && balls[i].getXDirection() == RIGHT) {
         if (curBall.getPosition().x > closestBall.getPosition().x) {
             if (curBall.getXDirection() == RIGHT){
                 closestBall = curBall;
@@ -241,6 +236,7 @@ void renderObject(const Texture2D* texture, const Vector2* position,
 
 void initialize() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Ditto Pong Game");
+    InitAudioDevice();
 
     gDittoBallTexture = LoadTexture(DITTOBALL);
     gDittoPaddle1Texture = LoadTexture(DITTOPADDLE1);
@@ -250,6 +246,9 @@ void initialize() {
     gPlayer2WinTexture = LoadTexture(PLAYER2WIN);
     gBackgroundTexture = LoadTexture(BACKGROUND);
 
+    gBGM = LoadMusicStream(BGM);
+    SetMusicVolume(gBGM, 0.33f);
+    PlayMusicStream(gBGM);
 }
 
 void update() {
@@ -370,6 +369,7 @@ void update() {
     else if (player2Score == 4) player2 = FOUR;
     else if (player2Score == 5) player2 = FIVE;
 
+    UpdateMusicStream(gBGM);
 }
 void render() {
     BeginDrawing();
@@ -453,6 +453,11 @@ void shutdown() {
     UnloadTexture(gDittoPaddle1Texture);
     UnloadTexture(gDittoPaddle2Texture);
     UnloadTexture(gScoresTexture);
+    UnloadTexture(gBackgroundTexture);
+    UnloadTexture(gPlayer1WinTexture);
+    UnloadTexture(gPlayer2WinTexture);
+    UnloadMusicStream(gBGM);
+    CloseAudioDevice();
     CloseWindow();
 }
 int main() {
