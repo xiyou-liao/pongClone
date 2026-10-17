@@ -288,7 +288,7 @@ void update() {
     //adds the correct number of balls into the vector containing balls in play
     //adds each ball in a slightly offset position and direction to prevent all the balls from stacking in one group
     while (balls.size() < numBalls) {
-        if (balls.empty()) balls.emplace_back(ORIGIN, BASE_SIZE, RIGHT, UP, &gDittoBallTexture);
+        if (balls.empty()) balls.emplace_back(ORIGIN, BASE_SIZE, LEFT, UP, &gDittoBallTexture);
         else if (balls.size() == 1) balls.emplace_back(ORIGINOFFSET1, BASE_SIZE, RIGHT, UP, &gDittoBallTexture);
         else if (balls.size() == 2) balls.emplace_back(ORIGINOFFSET2, BASE_SIZE, RIGHT, DOWN, &gDittoBallTexture);
     }
